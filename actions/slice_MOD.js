@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Convert Seconds To D/H/M/S",
+name: "Slice",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -16,7 +16,6 @@ name: "Convert Seconds To D/H/M/S",
 
 section: "Other Stuff",
 
-
 //---------------------------------------------------------------------
 // Action Subtitle
 //
@@ -24,29 +23,26 @@ section: "Other Stuff",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-return `Convert ${data.time}`;
+	return `Slice anything!`;
 },
 
 //---------------------------------------------------------------------
-	 // DBM Mods Manager Variables (Optional but nice to have!)
-	 //
-	 // These are variables that DBM Mods Manager uses to show information
-	 // about the mods for people to see in the list.
-	 //---------------------------------------------------------------------
+	// DBM Mods Manager Variables (Optional but nice to have!)
+	//
+	// These are variables that DBM Mods Manager uses to show information
+	// about the mods for people to see in the list.
+	//---------------------------------------------------------------------
 
- // Who made the mod (If not set, defaults to "DBM Mods")
- author: "Aamon", //Idea by Tresmos    // I don't know who Tremos is but 'heya' =]]]
+	// Who made the mod (If not set, defaults to "DBM Mods")
+	author: "EGGSY",
 
- // The version of the mod (Defaults to 1.0.0)
- version: "1.9.4", //not added yet....
+	// The version of the mod (Defaults to 1.0.0)
+	version: "1.8.6", //Added in 1.8.6
 
- // A short description to show on the mod line for this mod (Must be on a single line)
- short_description: "Convert Seconds to Days, Hours, Minutes and Seconds.",
+	// A short description to show on the mod line for this mod (Must be on a single line)
+	short_description: "Slice anything!",
 
- // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-
- //---------------------------------------------------------------------
+	// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
 //---------------------------------------------------------------------
 // Action Storage Function
@@ -55,12 +51,11 @@ return `Convert ${data.time}`;
 //---------------------------------------------------------------------
 
 variableStorage: function(data, varType) {
-		const type = parseInt(data.storage);
-		if(type !== varType) return;
-		return ([data.varName, 'Date']);
-	},
-
-
+	const type = parseInt(data.storage);
+	if(type !== varType) return;
+	let dataType = 'Sliced Result';
+	return ([data.varName, dataType]);
+},
 //---------------------------------------------------------------------
 // Action Fields
 //
@@ -69,7 +64,7 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["time", "storage", "varName"],
+fields: ["slice", "startingNumber", "sliceLength", "storage", "varName"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -89,31 +84,40 @@ fields: ["time", "storage", "varName"],
 
 html: function(isEvent, data) {
 	return `
-	<div style="float: left; width: 95%; padding-top: 8px;">
-		<p><u>Mod Info:</u><br>
-		Made by <b>Aamon</b>! <br> Convert seconds to Days Hours Minutes and Seconds.</p>
+<div id="modinfo">
+	<p>
+	   <u>Mod Info:</u><br>
+	   Made by EGGSY!<br>
+	</p></div><br>
+	<div padding-top: 8px;">
+		Slice Text:<br>
+		<textarea id="slice" rows="2" placeholder="Insert message here..." style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
+	</div><br>
+	<div style="float: left; width: 45%; padding-top: 8px;">
+	   Slice Starting Number:<br>
+	   <input id="startingNumber" class="round" type="text">
 	</div>
-	<br><br><br>
-	<div style="float: left; width: 70%; padding-top: 8px;">
-		Seconds to Convert:
-		<input id="time" class="round" type="text" placeholder="e.g. 1522672056 or use Variables">
-	</div>
+	<div style="float: right; width: 45%; padding-top: 8px;">
+	   Slice Length:<br>
+	   <input id="sliceLength" class="round" type="text">
+	</div><br><br>
 	<div style="float: left; width: 35%; padding-top: 8px;">
 		Store Result In:<br>
 		<select id="storage" class="round" onchange="glob.variableChange(this, 'varNameContainer')">
-		${data.variables[0]}
+			${data.variables[0]}
 		</select>
 	</div>
 	<div id="varNameContainer" style="float: right; display: none; width: 60%; padding-top: 8px;">
 		Variable Name:<br>
 		<input id="varName" class="round" type="text">
-	</div><br><br>
-	<div style=" float: left; width: 88%; padding-top: 8px;">
-		<br>
+	</div><br><br><br><br>
+	<div id="lasseIsGay" style="padding-top: 8px;">
 		<p>
-			For aditional information contact <b>Aamon#9130</b> on Discord or <a href ="https://twitter.com/44m0n"><b>@44m0n<b></a> on Twitter. 
+		example text: you are the best<br>
+		If you want to slice <b>you</b>, starting number = 0, slice length = 3.
 		</p>
-	</div>`;
+	</div>
+</div>`
 },
 
 //---------------------------------------------------------------------
@@ -141,50 +145,26 @@ init: function() {
 action: function(cache) {
 
 	const data = cache.actions[cache.index];
-	const time = this.evalMessage(data.time, cache);
-	var   _this = this; // this is needed sometimes.
+	const sliceText = this.evalMessage(data.slice, cache);
+	const startingFrom = parseInt(this.evalMessage(data.startingNumber, cache));
+	const sliceLength = parseInt(this.evalMessage(data.sliceLength, cache));
 
-    // Main code.
+	// Check if everything is ok
+	if(startingFrom < 0) return console.log("Your number can not be less than 0.")
+	if(sliceLength == 0) return console.log("Slice length can not be 0.");
+	if(!sliceText) return console.log("Please write something to slice.");
+	if(!startingFrom && startingFrom != 0) return console.log("Please write a starting number.");
+	if(!sliceLength) return console.log("Please write slice length.");
 
+	// Main code
+	result = `${sliceText}`.slice(`${startingFrom}`, `${sliceLength + startingFrom}`);
 
+	// Storing
+	const storage = parseInt(data.storage);
+	const varName = this.evalMessage(data.varName, cache);
+	this.storeValue(result, storage, varName, cache);
 
-	
-	let d, h, m, s;
-	let result;
-
-	if (isNaN(time)) {
-		result.toString() = "Invalid Date";
-		console.log('Please insert a number');
-	}
-	else {
-
-		s = time;
-
-
-		m = Math.floor(s / 60);
-		s = s % 60;
-		h = Math.floor(m / 60);
-		m = m % 60;
-		d = Math.floor(h / 24);
-		h = h % 24;
-
-		result = d + "d " + h + "h " + m + "m " + s + "s";
-
-	}
-		//return { days: d, hours: h, minutes: m, seconds: s }
-	
-
-
-	
-	if (result.toString() === "Invalid Date") result = undefined;
-
-    // Storage.
-	if(result !== undefined) {
-		const storage = parseInt(data.storage);
-		const varName = this.evalMessage(data.varName, cache);
-		this.storeValue(result, storage, varName, cache);
-	}
-    this.callNextAction(cache);
+	this.callNextAction(cache);
 },
 
 //---------------------------------------------------------------------

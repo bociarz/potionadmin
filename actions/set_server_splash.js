@@ -28,6 +28,27 @@ subtitle: function(data) {
 },
 
 //---------------------------------------------------------------------
+	 // DBM Mods Manager Variables (Optional but nice to have!)
+	 //
+	 // These are variables that DBM Mods Manager uses to show information
+	 // about the mods for people to see in the list.
+	 //---------------------------------------------------------------------
+
+	 // Who made the mod (If not set, defaults to "DBM Mods")
+	 author: "DBM",
+
+	 // The version of the mod (Defaults to 1.0.0)
+	 version: "1.8.2",
+
+	 // A short description to show on the mod line for this mod (Must be on a single line)
+	 short_description: "Fixed link",
+
+	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+
+
+	 //---------------------------------------------------------------------
+
+//---------------------------------------------------------------------
 // Action Fields
 //
 // These are the fields for the action. These fields are customized
@@ -41,15 +62,15 @@ fields: ["server", "varName", "storage", "varName2"],
 // Command HTML
 //
 // This function returns a string containing the HTML used for
-// editting actions. 
+// editting actions.
 //
 // The "isEvent" parameter will be true if this action is being used
-// for an event. Due to their nature, events lack certain information, 
+// for an event. Due to their nature, events lack certain information,
 // so edit the HTML to reflect this.
 //
-// The "data" parameter stores constants for select elements to use. 
+// The "data" parameter stores constants for select elements to use.
 // Each is an array: index 0 for commands, index 1 for events.
-// The names are: sendTargets, members, roles, channels, 
+// The names are: sendTargets, members, roles, channels,
 //                messages, servers, variables
 //---------------------------------------------------------------------
 
@@ -59,7 +80,7 @@ html: function(isEvent, data) {
 	<p>
 		<u>Note:</u><br>
 		Discord Splash Screens are only available to Discord Partners.<br>
-		For more information, check out <a href="#" onclick="glob.openLink('https://discordapp.com/partners')">https://discordapp.com/partners</a>.
+		For more information, check out <a href="https://discordapp.com/partners" target="_blank">https://discordapp.com/partners</a>.
 	</p>
 </div><br>
 <div>
@@ -106,7 +127,7 @@ init: function() {
 // Action Bot Function
 //
 // This is the function for the action within the Bot's Action class.
-// Keep in mind event calls won't have access to the "msg" parameter, 
+// Keep in mind event calls won't have access to the "msg" parameter,
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
@@ -115,15 +136,21 @@ action: function(cache) {
 	const type = parseInt(data.server);
 	const varName = this.evalMessage(data.varName, cache);
 	const server = this.getServer(type, varName, cache);
-	if(server && server.setSplash) {
+	if(Array.isArray(server) || (server && server.setSplash)) {
 		const type = parseInt(data.storage);
 		const varName2 = this.evalMessage(data.varName2, cache);
 		const image = this.getVariable(type, varName2, cache);
 		const Images = this.getDBM().Images;
 		Images.createBuffer(image).then(function(buffer) {
-			server.setSplash(buffer).then(function() {
-				this.callNextAction(cache);
-			}.bind(this)).catch(this.displayError.bind(this, data, cache));
+			if(Array.isArray(server)) {
+				this.callListFunc(server, 'setSplash', [buffer]).then(function() {
+					this.callNextAction(cache);
+				}.bind(this));
+			} else {
+				server.setSplash(buffer).then(function() {
+					this.callNextAction(cache);
+				}.bind(this)).catch(this.displayError.bind(this, data, cache));
+			}
 		}.bind(this)).catch(this.displayError.bind(this, data, cache));
 	} else {
 		this.callNextAction(cache);

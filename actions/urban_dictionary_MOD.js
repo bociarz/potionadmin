@@ -6,7 +6,7 @@ module.exports = {
 	// This is the name of the action displayed in the editor.
 	//---------------------------------------------------------------------
 
-	name: "Set Time Restriction",
+	name: "Urban Dictionary Search",
 
 	//---------------------------------------------------------------------
 	// Action Section
@@ -23,9 +23,8 @@ module.exports = {
 	//---------------------------------------------------------------------
 
 	subtitle: function (data) {
-
-		let value = parseInt(data.value);
-		return `Command Cooldown: ${value} seconds`;
+		const info = ['Definition', 'Result URL', 'Example', 'Thumbs Up Count', 'Thumbs Down Count', 'Author', 'Result ID', 'Tags'];
+		return `${info[parseInt(data.info)]}`;
 	},
 
 	//---------------------------------------------------------------------
@@ -36,17 +35,16 @@ module.exports = {
 	//---------------------------------------------------------------------
 
 	// Who made the mod (If not set, defaults to "DBM Mods")
-	author: "Aamon#9130",
+	author: "EGGSY",
 
 	// The version of the mod (Defaults to 1.0.0)
-	version: "1.9.5", //Added in 1.9.5
-
-	mod_version: "2",
+	version: "1.8.8", //Added in 1.8.8
 
 	// A short description to show on the mod line for this mod (Must be on a single line)
-	short_description: "This mod will restrict a command",
+	short_description: "Makes a Urban Dictionary search and gets informations.",
 
-	
+	// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
+
 
 	//---------------------------------------------------------------------
 
@@ -56,20 +54,36 @@ module.exports = {
 	// Stores the relevant variable info for the editor.
 	//---------------------------------------------------------------------
 
-	//variableStorage: function (data, varType) {
-	//},
-
-
-
-
-
-
 	variableStorage: function (data, varType) {
 		const type = parseInt(data.storage);
 		if (type !== varType) return;
-		return ([data.varName]);
+		const info = parseInt(data.info);
+		let dataType = 'Unknown Urban Dictionary Result';
+		switch (info) {
+			case 0:
+				dataType = "U.D. Definition";
+				break;
+			case 1:
+				dataType = "U.D. URL";
+				break;
+			case 2:
+				dataType = "U.D. Example";
+				break;
+			case 3:
+				dataType = "U.D. Thumbs Up Count";
+				break;
+			case 4:
+				dataType = "U.D. Thumbs Down Count";
+				break;
+			case 5:
+				dataType = "U.D. Author";
+				break;
+			case 6:
+				dataType = "U.D. Result ID";
+				break;
+		}
+		return ([data.varName, dataType]);
 	},
-
 
 	//---------------------------------------------------------------------
 	// Action Fields
@@ -79,7 +93,7 @@ module.exports = {
 	// are also the names of the fields stored in the action's JSON data.
 	//---------------------------------------------------------------------
 
-	fields: ["message", "value", "whattodo", "call", "storage", "varName", "source", "info"],
+	fields: ["string", "info", "storage", "varName"],
 
 	//---------------------------------------------------------------------
 	// Command HTML
@@ -99,43 +113,32 @@ module.exports = {
 
 	html: function (isEvent, data) {
 		return `
-	<div>
+<div style="width: 550px; height: 350px; overflow-y: scroll;">
 		<div>
 			<p>
-			Made by <b>${this.author}</b>.<br>
-			With this MOD you can now to adjust command time restriction. 
+				<u>Mod Info:</u><br>
+				Created by EGGSY!
 			</p>
-			
-		</div>
-		<div hidden style="float: left; width: 35%; padding-top: 20px;"> <<!-- todo: customized message-->
-			Warning Message<br>
-			<select id="message" class="round" onchange="glob.messageChange(this, 'varNameContainer')">
-				${data.messages[isEvent ? 1 : 0]}
-			</select>
-		</div>
-		
-		
-		<div style="float: left; width: 90%; padding-top: 15px;">
-			Time<br>
-			<input id="value" class="round" type="text" placeholder="Insert Seconds Here (eg: 60 -for 1 min)..."><br>
-		</div>
-
-		<div style="width: 35%; padding-top: 20px;">
-		If Cooldown is active: <br>
-		<select id="whattodo" class="round">
-			<option value="0">Jump to Action</option>
-			<option value="1">Skip Actions</option>
-			<option value="2">Do nothing</option>
-			<option value="3">Continue Actions</option>
+		</div><br>
+	<div style="width: 100%; padding-top: 8px;">
+		String to Search:<br>
+		<textarea id="string" rows="6" placeholder="Write a something or use variables..." style="width: 95%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
+	 </div>
+	<div style="float: left; width: 94%; padding-top: 8px;">
+		Source Info:<br>
+		<select id="info" class="round">
+			<option value="0">Definition</option>
+			<option value="1">URL</option>
+			<option value="2">Example</option>
+			<option value="3">Thumbs Up Count</option>
+			<option value="4">Thumbs Down Count</option>
+			<option value="5">Author</option>
+			<option value="6">Result ID</option>
 		</select>
-		</div>
-		<div style="width: 35%; padding-top: 20px;">
-		<input id="call" class="round" type="text">
-		</div>
-
-		<div>
-		<div style="float: left; width: 35%;  padding-top: 8px;">
-			Store Left Time In:<br>
+	</div><br><br><br>
+	<div>
+		<div style="float: left; width: 35%; padding-top: 8px;">
+			Store In:<br>
 			<select id="storage" class="round" onchange="glob.variableChange(this, 'varNameContainer')">
 				${data.variables[0]}
 			</select>
@@ -144,16 +147,8 @@ module.exports = {
 			Variable Name:<br>
 			<input id="varName" class="round" type="text"><br>
 		</div>
-		<div id="info" style="float: left; width: 75%; padding-top: 8px; ">
-			Command ID:<br>
-			<input id="source" class="round" type="text" placeholder="Insert Current Command ID(will be removed)...">
-		</div>
-
 	</div>
-
-	
-
-	</div>`
+</div>`
 	},
 
 	//---------------------------------------------------------------------
@@ -165,18 +160,8 @@ module.exports = {
 	//---------------------------------------------------------------------
 
 	init: function () {
-
-		try {
-			const {
-				glob,
-				document
-			} = this;
-	
-
-			//todo: set visibility to none to do nothing/call/stop actions and stuff like this blablabla
-		} catch (err) {
-			console.log(err);
-		}
+		const { glob, document } = this;
+		glob.variableChange(document.getElementById('storage'), 'varNameContainer');
 	},
 
 	//---------------------------------------------------------------------
@@ -189,79 +174,52 @@ module.exports = {
 
 	action: function (cache) {
 		const data = cache.actions[cache.index];
+		const info = parseInt(data.info);
+		const string = this.evalMessage(data.string, cache);
 
-		const Files = this.getDBM().Files;
+		// Check if everything is ok:
+		if (!string) return console.log("Please write something to search on Urban Dictionary.");
 
-		const value = parseInt(data.value);
-		const message = parseInt(data.message);
-		const varName = this.evalMessage(data.varName, cache);
-		const msg = this.getMessage(message, varName, cache);
-		const whattodo = parseInt(data.whattodo);
-		const val = parseInt(this.evalMessage(data.call, cache));
-		const index = Math.max(val - 1, 0);
-		const index2 = cache.index + val + 1;
-		var _this = this;
+		// Main code:
+		var _this = this; // This is needed most of the times; no one knows why!
+		const WrexMODS = this.getWrexMods(); // as always.
+		const urban = WrexMODS.require('urban'); // WrexMODS'll automatically try to install the module if you run it with CMD/PowerShell.
 
-		let id = this.evalMessage(data.source, cache);
-
-
-		let cmd;
-		const allData = Files.data.commands;
-		for(let i = 0; i < allData.length; i++) {
-			if(allData[i] && allData[i]._id === id) {
-				cmd = allData[i];
-				break;
+		urban(`${string}`).first(function (results) {
+			if (!results) return _this.callNextAction(cache); // this will call next action and won't kill your bot process if there is no result.
+			switch (info) {
+				case 0:
+					result = results.definition;
+					break;
+				case 1:
+					result = results.permalink;
+					break;
+				case 2:
+					result = results.example;
+					break;
+				case 3:
+					result = results.thumbs_up;
+					break;
+				case 4:
+					result = results.thumbs_down;
+					break;
+				case 5:
+					result = results.author;
+					break;
+				case 6:
+					result = results.defid;
+					break;
+				default:
+					break;
 			}
-		};
-
-		if(cmd == undefined || cmd == '') {return console.log('Please insert the current Command ID!')};
-
-
-
-		//in the future update----  member permission/ add to dbm editor (maybe yes, maybe not)
-		if (this.Cooldown(msg,cmd, value) === 1) {
-			//console.log("execute");
-			//and other stuff here if neded
-			this.callNextAction(cache);
-		} else {
-			
-			result = this.Cooldown(msg,cmd, value);
+			// Storing:
 			if (result !== undefined) {
 				const storage = parseInt(data.storage);
 				const varName2 = _this.evalMessage(data.varName, cache);
 				_this.storeValue(result, storage, varName2, cache);
-			};
-
-			switch (whattodo) {
-				case 0:
-					if (cache.actions[index]) {
-						cache.index = index - 1;
-						this.callNextAction(cache);
-					};
-					break;
-				case 1:
-					if (cache.actions[index2]) {
-						cache.index = index2 - 1;
-						this.callNextAction(cache);
-					};
-					break;
-				case 2:
-					break;
-				case 3:
-					this.callNextAction(cache);
-					break;
-				default:
-				break;
-
 			}
-
-			
-
-			// msg.delete(); //delete author command message 
-			//msg.reply(`please cool down! (**${value}** seconds left)`);
-		}
-
-
+			_this.callNextAction(cache);
+		});
 	},
 
 	//---------------------------------------------------------------------
@@ -273,32 +231,6 @@ module.exports = {
 	// functions you wish to overwrite.
 	//---------------------------------------------------------------------
 
-	mod: function (DBM) {
-
-		let userCooldown = {};
-		let userTimeRemaining = {};
-		var currentTime;
-		DBM.Actions.Cooldown = function (msg, cmd, value) {
-
-			
-			const ceva = cmd._id.concat(msg.author.id); //why? why not? results =299419528631531091rBBaV a unique author-command-id :wink:x	
-
-			if (userCooldown[ceva]) { // member has time restrict
-				//msg.reply("you cannot use this command")
-				//userCooldown[msg.author.id] = false; 
-				currentTime = userTimeRemaining[ceva] - Math.round(new Date() /1000);
-				return currentTime;
-			} else //member can use the command
-			{
-				//msg.reply(`you can use this command`); //execute command or something like that
-				userCooldown[ceva] = true;
-				userTimeRemaining[ceva] = Math.round(new Date() / 1000) + value ;
-				setTimeout(() => {
-					userCooldown[ceva] = false;
-				}, value * 1000)
-				return 1;
-			}
-		};
-	}
+	mod: function (DBM) { }
 
 }; // End of module

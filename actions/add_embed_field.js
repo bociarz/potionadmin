@@ -23,7 +23,7 @@ section: "Embed Message",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `${data.name} - ${data.message}`;
+	return `${data.message}`;
 },
 
 //---------------------------------------------------------------------
@@ -34,13 +34,13 @@ subtitle: function(data) {
 	 //---------------------------------------------------------------------
 
 	 // Who made the mod (If not set, defaults to "DBM Mods")
-	 author: "DBM, Aioi & MrGold",
+	 author: "DBM",
 
 	 // The version of the mod (Defaults to 1.0.0)
-	 version: "1.9.4", //Added in 1.8.2
+	 version: "1.8.2",
 
 	 // A short description to show on the mod line for this mod (Must be on a single line)
-	 short_description: "Changed category and added blank field feature",
+	 short_description: "Changed category",
 
 	 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
@@ -76,7 +76,6 @@ fields: ["storage", "varName", "fieldName", "message", "inline"],
 
 html: function(isEvent, data) {
 	return `
-<div><p>This action has been modified by DBM Mods</p></div><br>
 <div>
 	<div style="float: left; width: 35%;">
 		Source Embed Object:<br>
@@ -92,7 +91,7 @@ html: function(isEvent, data) {
 <div style="padding-top: 8px;">
 	<div style="float: left; width: 50%;">
 		Field Name:<br>
-		<input id="fieldName" placeholder="Optional" class="round" type="text">
+		<input id="fieldName" class="round" type="text">
 	</div>
 	<div style="float: left; width: 50%;">
 		Display Inline:<br>
@@ -104,7 +103,7 @@ html: function(isEvent, data) {
 </div><br><br><br>
 <div style="padding-top: 8px;">
 	Field Description:<br>
-	<textarea id="message" rows="7.5" placeholder="Insert message here... (Optional)" style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
+	<textarea id="message" rows="8" placeholder="Insert message here..." style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
 </div>`
 },
 
@@ -129,17 +128,14 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-
 	const storage = parseInt(data.storage);
 	const varName = this.evalMessage(data.varName, cache);
 	const embed = this.getVariable(storage, varName, cache);
-
 	const name = this.evalMessage(data.fieldName, cache);
 	const message = this.evalMessage(data.message, cache);
-
 	const inline = Boolean(data.inline === "0");
 	if(embed && embed.addField) {
-		embed.addField(name ? name : '\u200B', message ? message : '\u200B', inline);
+		embed.addField(name, message, inline);
 	}
 	this.callNextAction(cache);
 },

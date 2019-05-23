@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Check Global Data",
+name: "Set Member Channel Perms",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Check Global Data",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Deprecated",
+section: "Channel Control",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +23,10 @@ section: "Deprecated",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const results = ["Continue Actions", "Stop Action Sequence", "Jump To Action", "Jump Forward Actions"];
-	return `If True: ${results[parseInt(data.iftrue)]} ~ If False: ${results[parseInt(data.iffalse)]}`;
+	const names = ['Same Channel', 'Mentioned Channel', 'Default Channel', 'Temp Variable', 'Server Variable', 'Global Variable'];
+	const index = parseInt(data.channel);
+	return index < 3 ? `${names[index]}` : `${names[index]} (${data.varName})`;
 },
-
-//---------------------------------------------------------------------
-// DBM Mods Manager Variables (Optional but nice to have!)
-//
-// These are variables that DBM Mods Manager uses to show information
-// about the mods for people to see in the list.
-//---------------------------------------------------------------------
-
-// Who made the mod (If not set, defaults to "DBM Mods")
-author: "MrGold",
-
-// The version of the mod (Defaults to 1.0.0)
-version: "1.9.5", //Added in 1.9.5
-
-// A short description to show on the mod line for this mod (Must be on a single line)
-short_description: "Check if a Global Data Value meets the conditions",
-
-// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-//---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -55,7 +36,7 @@ short_description: "Check if a Global Data Value meets the conditions",
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["dataName", "comparison", "value", "iftrue", "iftrueVal", "iffalse", "iffalseVal"],
+fields: ["channel", "varName", "member", "varName2", "permission", "state"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -75,30 +56,45 @@ fields: ["dataName", "comparison", "value", "iftrue", "iftrueVal", "iffalse", "i
 
 html: function(isEvent, data) {
 	return `
-<div style="padding-top: 8px;">
-	<div style="float: left; width: 50%;">
-		Data Name:<br>
-		<input id="dataName" class="round" type="text">
-	</div>
-	<div style="float: left; width: 45%;">
-		Comparison Type:<br>
-		<select id="comparison" class="round">
-			<option value="0">Exists</option>
-			<option value="1" selected>Equals</option>
-			<option value="2">Equals Exactly</option>
-			<option value="3">Less Than</option>
-			<option value="4">Greater Than</option>
-			<option value="5">Includes</option>
-			<option value="6">Matches Regex</option>
+<div>
+	<div style="float: left; width: 35%;">
+		Source Channel:<br>
+		<select id="channel" class="round" onchange="glob.channelChange(this, 'varNameContainer')">
+			${data.channels[isEvent ? 1 : 0]}
 		</select>
+	</div>
+	<div id="varNameContainer" style="display: none; float: right; width: 60%;">
+		Variable Name:<br>
+		<input id="varName" class="round" type="text" list="variableList"><br>
 	</div>
 </div><br><br><br>
 <div style="padding-top: 8px;">
-	Value to Compare to:<br>
-	<input id="value" class="round" type="text" name="is-eval">
-</div>
-<div style="padding-top: 16px;">
-	${data.conditions[0]}
+	<div style="float: left; width: 35%;">
+		Source Member:<br>
+		<select id="member" name="second-list" class="round" onchange="glob.memberChange(this, 'varNameContainer2')">
+			${data.members[isEvent ? 1 : 0]}
+		</select>
+	</div>
+	<div id="varNameContainer2" style="display: none; float: right; width: 60%;">
+		Variable Name:<br>
+		<input id="varName2" class="round" type="text" list="variableList2"><br>
+	</div>
+</div><br><br><br>
+<div style="padding-top: 8px;">
+	<div style="float: left; width: 45%;">
+		Permission:<br>
+		<select id="permission" class="round">
+			${data.permissions[0]}
+		</select>
+	</div>
+	<div style="padding-left: 5%; float: left; width: 55%;">
+		Change To:<br>
+		<select id="state" class="round">
+			<option value="0" selected>Allow</option>
+			<option value="1">Inherit</option>
+			<option value="2">Disallow</option>
+		</select>
+	</div>
 </div>`
 },
 
@@ -113,8 +109,8 @@ html: function(isEvent, data) {
 init: function() {
 	const {glob, document} = this;
 
-	glob.onChangeTrue(document.getElementById('iftrue'));
-	glob.onChangeFalse(document.getElementById('iffalse'));
+	glob.channelChange(document.getElementById('channel'), 'varNameContainer');
+	glob.memberChange(document.getElementById('member'), 'varNameContainer2');
 },
 
 //---------------------------------------------------------------------
@@ -127,57 +123,31 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
+	const storage = parseInt(data.channel);
+	const varName = this.evalMessage(data.varName, cache);
+	const channel = this.getChannel(storage, varName, cache);
 
-	let result = false;
+	const storage2 = parseInt(data.member);
+	const varName2 = this.evalMessage(data.varName2, cache);
+	const member = this.getMember(storage2, varName2, cache);
 
-	const dataName = this.evalMessage(data.dataName, cache);
-	const compare = parseInt(data.comparison);
-
-	const fs = require("fs");
-	const path = require("path");
-
-	const filePath = path.join(process.cwd(), "data", "globals.json");
-
-	if(!fs.existsSync(filePath)) {
-		console.log("ERROR: Globals JSON file does not exist!");
+	const options = {};
+	options[data.permission] = data.state === "0" ? true : (data.state === "2" ? false : null);
+	if(member && member.id) {
+		if(Array.isArray(channel)) {
+			this.callListFunc(channel, 'overwritePermissions', [member.id, options]).then(function() {
+				this.callNextAction(cache);
+			}.bind(this));
+		} else if(channel && channel.overwritePermissions) {
+			channel.overwritePermissions(member.id, options).then(function() {
+				this.callNextAction(cache);
+			}.bind(this)).catch(this.displayError.bind(this, data, cache));
+		} else {
+			this.callNextAction(cache);
+		}
+	} else {
 		this.callNextAction(cache);
-		return;
 	}
-
-	const obj = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-
-	const val1 = obj[dataName];
-
-	let val2 = this.evalMessage(data.value, cache);
-	if(compare !== 6) val2 = this.eval(val2, cache);
-	if(val2 === false) val2 = this.evalMessage(data.value, cache);
-	
-	switch(compare) {
-		case 0:
-			result = Boolean(val1 !== undefined);
-			break;
-		case 1:
-			result = Boolean(val1 == val2);
-			break;
-		case 2:
-			result = Boolean(val1 === val2);
-			break;
-		case 3:
-			result = Boolean(val1 < val2);
-			break;
-		case 4:
-			result = Boolean(val1 > val2);
-			break;
-		case 5:
-			if(typeof(val1.includes) === 'function') {
-				result = Boolean(val1.includes(val2));
-			}
-			break;
-		case 6:
-			result = Boolean(val1.match(new RegExp('^' + val2 + '$', 'i')));
-			break;
-	}
-	this.executeResults(result, data, cache);
 },
 
 //---------------------------------------------------------------------

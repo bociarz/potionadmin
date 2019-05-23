@@ -14,7 +14,7 @@ name: "Transfer Variable",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Variable Things",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -28,24 +28,24 @@ subtitle: function(data) {
 },
 
 //---------------------------------------------------------------------
-// DBM Mods Manager Variables (Optional but nice to have!)
+// Action Storage Function
 //
-// These are variables that DBM Mods Manager uses to show information
-// about the mods for people to see in the list.
+// Stores the relevant variable info for the editor.
 //---------------------------------------------------------------------
 
-// Who made the mod (If not set, defaults to "DBM Mods")
-author: "DBM & MrGold", //THIS ACTION WAS BROKEN AF, WTF SRD???
-
-// The version of the mod (Defaults to 1.0.0)
-version: "1.9.5", //Added in 1.9.5
-
-// A short description to show on the mod line for this mod (Must be on a single line)
-short_description: "Transfer the Variable Value to another Variable",
-
-// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-//---------------------------------------------------------------------
+variableStorage: function(data, varType) {
+	const type = parseInt(data.storage2);
+	if(type !== varType) return;
+	let assumeType = 'Unknown Type';
+	if(type === parseInt(data.storage)) {
+		for(let i = 0; i < tracker.length; i++) {
+			if(tracker[i] && tracker[i][0] === data.varName) {
+				assumeType = tracker[i][1];
+			}
+		}
+	}
+	return ([data.varName2, assumeType]);
+},
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -75,11 +75,10 @@ fields: ["storage", "varName", "storage2", "varName2"],
 
 html: function(isEvent, data) {
 	return `
-<div><p>This action has been modified by DBM Mods</p></div><br>
 <div>
 	<div style="float: left; width: 35%;">
 		Transfer Value From:<br>
-		<select id="storage" class="round" onchange="glob.variableChange(this, 'varNameContainer')">
+		<select id="storage" class="round" onchange="glob.refreshVariableList(this)">
 			${data.variables[1]}
 		</select>
 	</div>
@@ -91,13 +90,13 @@ html: function(isEvent, data) {
 <div style="padding-top: 8px;">
 	<div style="float: left; width: 35%;">
 		Transfer Value To:<br>
-		<select id="storage2" name="second-list" class="round" onchange="glob.variableChange(this, 'varNameContainer2')">
+		<select id="storage2" class="round">
 			${data.variables[1]}
 		</select>
 	</div>
 	<div id="varNameContainer2" style="float: right; width: 60%;">
 		Variable Name:<br>
-		<input id="varName2" class="round" type="text" list="variableList2"><br>
+		<input id="varName2" class="round" type="text"><br>
 	</div>
 </div>`
 },
@@ -113,8 +112,7 @@ html: function(isEvent, data) {
 init: function() {
 	const {glob, document} = this;
 
-	glob.variableChange(document.getElementById('storage'), 'varNameContainer');
-	glob.variableChange(document.getElementById('storage2'), 'varNameContainer2');
+	glob.refreshVariableList(document.getElementById('storage'));
 },
 
 //---------------------------------------------------------------------
@@ -127,7 +125,6 @@ init: function() {
 
 action: function(cache) {
 	const data = cache.actions[cache.index];
-
 	const storage = parseInt(data.storage);
 	const varName = this.evalMessage(data.varName, cache);
 	const var1 = this.getVariable(storage, varName, cache);
@@ -135,7 +132,6 @@ action: function(cache) {
 		this.callNextAction(cache);
 		return;
 	}
-
 	const storage2 = parseInt(data.storage2);
 	const varName2 = this.evalMessage(data.varName2, cache);
 	const var2 = this.getVariable(storage2, varName2, cache);
@@ -143,8 +139,7 @@ action: function(cache) {
 		this.callNextAction(cache);
 		return;
 	}
-
-	this.storeValue(var1, storage2, varName2, cache);
+	this.storeValue(var2, storage, varName, cache);
 	this.callNextAction(cache);
 },
 

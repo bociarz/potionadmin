@@ -39,7 +39,7 @@ module.exports = {
 		const servers = [
 			'Current Server', 'Temp Variable', 'Server Variable', 'Global Variable'
 		];
-		const info = ['Server Object', 'Server ID', 'Server Name', 'Server Name Acronym', 'Server Region', 'Server Icon URL', 'Server Verification Level', 'Server Default Channel', 'Server AFK Channel', 'Server System Channel', 'Server Default Role', 'Server Owner Member', 'Server Bot Member Object', 'Server Channel List', 'Server Role List', 'Server Member List', 'Server Emoji List', 'Server Member Count', 'Creation Date', 'Time To AFK', 'Is Server Available?', 'More than 250 members?', 'Date Bot Joined Server', 'Channel Amount', 'Emoji Amount', 'Embed Links', 'DND Members Count', 'Online Members Count (fixed)', 'Offline Members Count', 'Idle Members Count', 'Total Bots Count In Server', 'Server Channel IDs', 'Server Role IDs', 'Server Member IDs', 'Server Bot Member Count', 'Server Human Member Count', 'Server Member Count', 'Role Count', 'Text Channel Count', 'Voice Channel Count', 'Is Server Verified?', 'Banned Users List', 'Invite List'];
+		const info = ['Server Object', 'Server ID', 'Server Name', 'Server Name Acronym', 'Server Region', 'Server Icon URL', 'Server Verification Level', 'Server Default Channel', 'Server AFK Channel', 'Server System Channel', 'Server Default Role', 'Server Owner Member', 'Server Bot Member Object', 'Server Channel List', 'Server Role List', 'Server Member List', 'Server Emoji List', 'Server Member Count', 'Creation Date', 'Time To AFK', 'Is Server Available?', 'More than 250 members?', 'Date Bot Joined Server', 'Channel Amount', 'Emoji Amount', 'Embed Links', 'DND Members Count', 'Online Members Count (fixed)', 'Offline Members Count', 'Idle Members Count', 'Total Bots Count In Server', 'Server Channel IDs', 'Server Role IDs', 'Server Member IDs', 'Server Bot Member Count', 'Server Human Member Count', 'Server Member Count', 'Role Count', 'Text Channel Count', 'Voice Channel Count', 'Is Server Verified?'];
 		return `${servers[parseInt(data.server)]} - ${info[parseInt(data.info)]}`;
 	},
 
@@ -51,10 +51,10 @@ module.exports = {
 	//---------------------------------------------------------------------
 
 	// Who made the mod (If not set, defaults to "DBM Mods")
-	author: "Lasse, EGGSY, EliteArtz, Danno3817 & ZockerNico",
+	author: "Lasse, EGGSY, EliteArtz & Danno3817",
 
 	// The version of the mod (Defaults to 1.0.0)
-	version: "1.9.5", // added in 1.9.1
+	version: "1.9.1", // added in 1.9.1
 
 	// A short description to show on the mod line for this mod (Must be on a single line)
 	short_description: "Stores Server Information",
@@ -76,10 +76,10 @@ module.exports = {
 		let dataType = 'Unknown Type';
 		switch (info) {
 			case 0: // Object
-				dataType = 'Guild Object';
+				dataType = 'Server';
 				break;
 			case 1: // ID
-				dataType = 'Guild ID';
+				dataType = 'Server ID';
 				break;
 			case 2: // Name
 			case 3: // Name Acronym
@@ -117,19 +117,19 @@ module.exports = {
 				break;
 			case 11: // Owner Member
 			case 12: // Bot Member Object
-				dataType = 'Guild Member';
+				dataType = 'Server Member';
 				break;
 			case 13: // Channel List
-				dataType = 'List';
+				dataType = 'Channel List';
 				break;
 			case 14: // Role List
-				dataType = 'List';
+				dataType = 'Role List';
 				break;
 			case 15: // Member List
-				dataType = 'List';
+				dataType = 'Server Member List';
 				break;
 			case 16: // Emoji List
-				dataType = 'List';
+				dataType = 'Emoji List';
 				break;
 			case 18: // Creation Date
 			case 22: // Date bot Joined Server.
@@ -141,20 +141,16 @@ module.exports = {
 				dataType = "Boolean";
 				break;
 			case 31: // Server Channel IDs.
-				dataType = 'List';
+				dataType = 'Server Channel IDs';
 				break;
 			case 32: // Server Roles IDs.
-				dataType = 'List';
+				dataType = 'Server Role IDs';
 				break;
 			case 33: // Server Member IDs.
-				dataType = 'List';
+				dataType = 'Server Member IDs';
 				break;
 			case 40: // Verified?
-				dataType = 'Boolean';
-				break;
-			case 41: //	Collection of banned users
-			case 42: //	Collection of guild invites
-				dataType = 'List';
+				dataType = 'Is Server Verified - Boolean';
 				break;
 		}
 		return ([data.varName2, dataType]);
@@ -233,14 +229,13 @@ module.exports = {
 						<option value="30">Total Bots in Servers</option>
 						<option value="34">Bot Count (Same as Total Bots In Servers)</option>
 						<option value="35">Human Member Count</option>
-						<option value="36">Member Count</option>
-						<option value="41">Banned Member List</option>
+						<option value="36">Member Count</option>				
 					</optgroup>
 					<optgroup label="Member Status Infos">
-						<option value="27">Online Members Count</option>
-						<option value="29">Idle Members Count</option>
 						<option value="26">DND Members Count</option>
+						<option value="27">Online Members Count</option>
 						<option value="28">Offline Members Count</option>
+						<option value="29">idle Members Count</option>
 					</optgroup>
 					<optgroup label="ID Infos">
 						<option value="31">Server Channel IDs</option>
@@ -259,7 +254,6 @@ module.exports = {
 						<option value="24">Emoji Amount</option>
 						<option value="25">Embeds links?</option>
 						<option value="37">Role Count</option>
-						<option value="42">Invite List</option>
 					</optgroup>				
 					<!--<option value="21">More Than 250 Members?</option>-->				
 				</select>
@@ -463,32 +457,14 @@ module.exports = {
 			case 40: // Is Server Verified?
 				result = targetServer.verified;
 				break;
-			case 41://	Collection of banned users
-				targetServer.fetchBans()
-				.then(bans => {
-					result = bans.array();
-					const storage = parseInt(data.storage);
-					const varName2 = this.evalMessage(data.varName2, cache);
-					this.storeValue(result, storage, varName2, cache);
-				});
-				break;
-			case 42://	Collection of guild invites
-				targetServer.fetchInvites()
-				.then(invites => {
-					result = invites.array();
-					const storage = parseInt(data.storage);
-					const varName2 = this.evalMessage(data.varName2, cache);
-					this.storeValue(result, storage, varName2, cache);
-				});
-				break;
 			default:
 				break;
-		};
+		}
 		if (result !== undefined) {
 			const storage = parseInt(data.storage);
 			const varName2 = this.evalMessage(data.varName2, cache);
 			this.storeValue(result, storage, varName2, cache);
-		};
+		}
 		this.callNextAction(cache);
 	},
 

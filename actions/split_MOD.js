@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Store Global Data",
+name: "Split",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Store Global Data",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Deprecated",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,29 +23,26 @@ section: "Deprecated",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	const storage = ['', 'Temp Variable', 'Server Variable', 'Global Variable'];
-	return `${storage[parseInt(data.storage)]} (${data.varName})`;
+	return `Split anything!`;
 },
 
 //---------------------------------------------------------------------
-// DBM Mods Manager Variables (Optional but nice to have!)
-//
-// These are variables that DBM Mods Manager uses to show information
-// about the mods for people to see in the list.
-//---------------------------------------------------------------------
+	// DBM Mods Manager Variables (Optional but nice to have!)
+	//
+	// These are variables that DBM Mods Manager uses to show information
+	// about the mods for people to see in the list.
+	//---------------------------------------------------------------------
 
-// Who made the mod (If not set, defaults to "DBM Mods")
-author: "MrGold",
+	// Who made the mod (If not set, defaults to "DBM Mods")
+	author: "Sopy",
 
-// The version of the mod (Defaults to 1.0.0)
-version: "1.9.5", //Added in 1.9.5
+	// The version of the mod (Defaults to 1.0.0)
+	version: "1.9", //Added in 1.9
 
-// A short description to show on the mod line for this mod (Must be on a single line)
-short_description: "Stores a Global Data Value",
+	// A short description to show on the mod line for this mod (Must be on a single line)
+	short_description: "Split anything!",
 
-// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
-
-//---------------------------------------------------------------------
+	// If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
 //---------------------------------------------------------------------
 // Action Storage Function
@@ -56,9 +53,9 @@ short_description: "Stores a Global Data Value",
 variableStorage: function(data, varType) {
 	const type = parseInt(data.storage);
 	if(type !== varType) return;
-	return ([data.varName, 'Unknown Type']);
+	let dataType = 'Sliced Result';
+	return ([data.varName, dataType]);
 },
-
 //---------------------------------------------------------------------
 // Action Fields
 //
@@ -67,37 +64,40 @@ variableStorage: function(data, varType) {
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: ["dataName", "defaultVal", "storage", "varName"],
+fields: ["split", "spliton", "storage", "varName"],
 
 //---------------------------------------------------------------------
 // Command HTML
 //
 // This function returns a string containing the HTML used for
-// editting actions. 
+// editting actions.
 //
 // The "isEvent" parameter will be true if this action is being used
-// for an event. Due to their nature, events lack certain information, 
+// for an event. Due to their nature, events lack certain information,
 // so edit the HTML to reflect this.
 //
-// The "data" parameter stores constants for select elements to use. 
+// The "data" parameter stores constants for select elements to use.
 // Each is an array: index 0 for commands, index 1 for events.
-// The names are: sendTargets, members, roles, channels, 
+// The names are: sendTargets, members, roles, channels,
 //                messages, servers, variables
 //---------------------------------------------------------------------
 
 html: function(isEvent, data) {
 	return `
-<div style="padding-top: 8px;">
-	<div style="float: left; width: 40%;">
-		Data Name:<br>
-		<input id="dataName" class="round" type="text">
-	</div>
-	<div style="float: left; width: 60%;">
-		Default Value (if data doesn't exist):<br>
-		<input id="defaultVal" class="round" type="text" value="0">
-	</div>
-</div><br><br><br>
-<div style="padding-top: 8px;">
+<div id ="wrexdiv" style="width: 550px; height: 350px; overflow-y: scroll;">
+<div id="modinfo">
+	<p>
+	   <u>Mod Info:</u><br>
+Made by Sopy<br>Fixed and Edited by MrGold & NetLuis<br><br><u>How to use:</u><br>After you split and save (ex. \${tempVars("splited")}\) in order to use the a chunk somewhere you shoud place [Chunk number] after the variable name (ex. \${tempVars("splited")[0]}\)<br> Counting starts from 0 not from 1!
+	</p></div><br>
+	<div padding-top: 8px;">
+		Split Text:<br>
+		<textarea id="split" rows="2" placeholder="Insert text here..." style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
+</div><br>
+	<div style="float: left; width: 45%; padding-top: 8px;">
+	   Split on:<br>
+	   <input id="spliton" class="round" type="text">
+</div><br><br><br><br>
 	<div style="float: left; width: 35%;">
 		Store In:<br>
 		<select id="storage" class="round">
@@ -119,49 +119,32 @@ html: function(isEvent, data) {
 // functions for the DOM elements.
 //---------------------------------------------------------------------
 
-init: function() {},
+init: function() {
+	const {glob, document} = this;
+
+	glob.variableChange(document.getElementById('storage'), 'varNameContainer');
+},
 
 //---------------------------------------------------------------------
 // Action Bot Function
 //
 // This is the function for the action within the Bot's Action class.
-// Keep in mind event calls won't have access to the "msg" parameter, 
+// Keep in mind event calls won't have access to the "msg" parameter,
 // so be sure to provide checks for variable existance.
 //---------------------------------------------------------------------
 
 action: function(cache) {
+
 	const data = cache.actions[cache.index];
-
-	const dataName = this.evalMessage(data.dataName, cache);
-	const defVal = this.eval(this.evalMessage(data.defaultVal, cache), cache);
-
-	const fs = require("fs");
-	const path = require("path");
-
-	const filePath = path.join(process.cwd(), "data", "globals.json");
-
-	if(!fs.existsSync(filePath)) {
-		console.log("ERROR: Globals JSON file does not exist!");
-		this.callNextAction(cache);
-		return;
-	}
-
-	const obj = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-	
-	let result;
-	if(defVal) {
-		if(obj[dataName]) {
-			result = obj[dataName];
-	    } else {
-			result = defVal;
-		}
-	} else {
-		result = obj[dataName];
-	}
-	
+	const texttosplit = this.evalMessage(data.split, cache);
+	const spliton = this.evalMessage(data.spliton, cache);
+	if(!texttosplit) return console.log("No text has been given for getting split.");
+	if(!spliton) return console.log("Something is missing...");
+	result = `${texttosplit}`.split(`${spliton}`);
 	const storage = parseInt(data.storage);
 	const varName = this.evalMessage(data.varName, cache);
 	this.storeValue(result, storage, varName, cache);
+
 	this.callNextAction(cache);
 },
 
